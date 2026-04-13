@@ -1,0 +1,15 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Local tuning + outputs
+.spin_tracker_hsv.json
+rpm_trace*.csv
+debug_first_frame.jpg
+debug_first_mask.png
+my_hsv.json
+
+# Videos (keep out of git by default)
+*.mov
+*.MOV
+*.mp4
