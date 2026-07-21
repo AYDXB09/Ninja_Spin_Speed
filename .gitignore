@@ -1,6 +1,8 @@
 .DS_Store
+._*
 __pycache__/
 *.pyc
+.claude/
 
 # Local tuning + outputs
 .spin_tracker_hsv.json
