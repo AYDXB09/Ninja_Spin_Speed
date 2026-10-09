@@ -7,7 +7,7 @@ Tracks a bright colour marker on the tip of a spinning rod via webcam and
 overlays live IB-style rotational kinematics & dynamics:
 
     θ (rad) | ω (rad s⁻¹) | α (rad s⁻²)
-    v = ωr  | a_c = ω²r   | I, τ = Iα, E_k = ½Iω²
+    v = ωr  | a_c = ω²r   | I, τ = Iα
 
 Controls (shown on screen too):
     C       Calibrate: click the CENTER of rotation, then the marker TIP
@@ -19,7 +19,7 @@ Controls (shown on screen too):
     Q / ESC Quit
 
 Run:    python spin_tracker.py
-Video:  python spin_tracker.py --video clip.mp4 --export out.mp4
+Video:  python spin_tracker.py --video clip.mp4      (press V first to also write an annotated MP4)
 Test:   python spin_tracker.py --selftest   (validates physics math, no camera)
 """
 
@@ -58,11 +58,15 @@ class TextRenderer:
         r"C:\Windows\Fonts\segoeui.ttf",
         r"C:\Windows\Fonts\arial.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",   # macOS
+        "/Library/Fonts/Arial Unicode.ttf",                       # macOS (older installs)
     ]
     BOLD_PATHS = [
         r"C:\Windows\Fonts\segoeuib.ttf",
         r"C:\Windows\Fonts\arialbd.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",   # macOS (no bold face; regular is used)
+        "/Library/Fonts/Arial Unicode.ttf",
     ]
 
     def __init__(self):
@@ -200,9 +204,8 @@ class PhysicsEngine:
             omega = savgol_filter(th, n, polyorder=2, deriv=1, delta=dt)[-2]
             alpha = savgol_filter(th, n, polyorder=2, deriv=2, delta=dt)[-2]
         else:
-            omega = (th[-1] - th[-3]) / (2 * dt)  # central difference
-            w = np.gradient(th, ts)
-            alpha = (w[-1] - w[-3]) / (2 * dt)
+            omega = (th[-1] - th[-3]) / (2 * dt)              # central difference
+            alpha = (th[-1] - 2 * th[-2] + th[-3]) / (dt * dt)  # second difference
         return float(omega), float(alpha)
 
 
@@ -537,7 +540,9 @@ class App:
         if is_file:
             cap = cv2.VideoCapture(self.source)
         else:
-            cap = cv2.VideoCapture(self.source, cv2.CAP_DSHOW)
+            # DirectShow is Windows-only; other platforms use OpenCV's default backend
+            cap = (cv2.VideoCapture(self.source, cv2.CAP_DSHOW)
+                   if sys.platform == "win32" else cv2.VideoCapture(self.source))
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
             cap.set(cv2.CAP_PROP_FPS, 60)
@@ -556,8 +561,8 @@ class App:
         self.t0 = time.perf_counter()
         if is_file:
             self.paused = True
-            self.msg = ("Video loaded — press C to calibrate on this frame, "
-                        "then SPACE to analyse")
+            self.msg = ("Video loaded — press M (lock colour) and C (calibrate) "
+                        "on this frame; analysis starts automatically")
             ok, first = cap.read()
             if ok:
                 self.frozen = first
@@ -1036,6 +1041,9 @@ def main():
     print("=" * 56)
     print("Enter your spinner's two measurements (press Enter for the")
     print("default). Everything else is done in the camera window.\n")
+    if not HAVE_SCIPY:
+        print("Note: SciPy not installed - using a simple finite-difference fallback.\n"
+              "      Readouts will be noisier; `pip install scipy` for smoothed values.\n")
     L_cm = args.length_cm if args.length_cm else ask("Staff length (cm)", 8.0)
     m_g = args.mass_g if args.mass_g else ask("Staff mass  (g)", 20.0)
     pivot = args.pivot or "center"     # spinners rotate about their middle
