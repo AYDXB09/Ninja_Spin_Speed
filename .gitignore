@@ -15,3 +15,11 @@ my_hsv.json
 *.mov
 *.MOV
 *.mp4
+
+# Files the app writes when you press S / V (or finish analysing a video)
+spin_data_*.csv
+spin_annotated_*.mp4
+
+# Local environments
+.venv/
+venv/

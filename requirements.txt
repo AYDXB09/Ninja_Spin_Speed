@@ -1,0 +1,7 @@
+# Last verified with Python 3.12 + opencv 5.0.0, numpy 2.5.3, scipy 1.18.1, pillow 12.3.0
+# (macOS, video-file mode). Use `opencv-python` for the live window; the headless build
+# is enough for --selftest and tools/verify_on_simulated_clip.py.
+opencv-python
+numpy
+scipy      # recommended: smoothed omega/alpha. Without it a noisier finite-difference fallback is used.
+pillow     # draws the Greek letters (theta, omega, alpha, tau); without it they show as '?'
